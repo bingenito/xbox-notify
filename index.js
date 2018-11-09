@@ -49,7 +49,7 @@ function processToken(token, attempt) {
       const retry = attempt + 1;
       if (retry <= retryLimit) {
         console.log("Retrying " + token);
-        processToken(token, attempt);
+        setTimeout(() => processToken(token, retry), 2000);
       } else {
         console.log(response.statusCode + " - " + token);
       }
