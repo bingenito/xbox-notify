@@ -34,7 +34,7 @@ function main() {
 
 function processToken(token, attempt) {
   const options = {
-    url: "https://xboxapi.com/v2/" + token + "/activity",
+    url: `https://xboxapi.com/v2/${token}/activity`,
     headers: {
       "X-AUTH": auth,
       "Accept-Language": "en-US"
@@ -66,7 +66,7 @@ function processToken(token, attempt) {
       .filter(item => item.activityItemType === "Achievement" || item.activityItemType === "GameDVR")
       .filter(item => DateTime.fromISO(item.activity.date) > pollStart.minus({minutes: pollingInterval}))
       .sort((a, b) => { new Date(b.activity.date) - new Date(a.activity.date) })
-//      .slice(0, 1)
+//      .slice(0, 5)
       .forEach(processItem);
   });
 }
@@ -76,20 +76,52 @@ function processItem(item) {
 
   switch (item.activityItemType) {
     case "Achievement":
-      message = "{" + (channelOverride ? "\"channel\": \"" + channelOverride + "\", " : ", ") + "\"attachments\": [{\"fallback\": \"" + item.gamertag + " unlocked an achievement\", \"title\": \""
-        + item.gamertag + " unlocked an achievement for " + item.gamerscore + " gamerscore\", \"thumb_url\": \"" + (item.activity ? item.activity.achievementIcon : "")
-        + "&format=png&w=128&h=128\", \"fields\": [{\"title\": \"Title\", \"value\": \"" + item.itemText + "\"},{\"title\": \"Description\", \"value\": \""
-        + item.achievementDescription + "\"}]}]}";
+      message = {
+        attachments: [
+          {
+            fallback: `${item.gamertag}  unlocked an achievement`,
+            title: `${item.gamertag} unlocked an achievement for ${item.gamerscore} gamerscore`,
+            thumb_url: `${(item.activity ? item.activity.achievementIcon : '')}&format=png&w=128&h=128`,
+            fields: [
+              {
+                title: `Title`,
+                value: item.itemText
+              },
+              {
+                title: `Description`,
+                value: item.achievementDescription
+              }
+            ]
+          }
+        ]
+      };
       break;
 
     case "GameDVR":
-      message = "{" + (channelOverride ? "\"channel\": \"" + channelOverride + "\", " : ", ") + "\"attachments\": [{\"fallback\": \"" + item.gamertag + " " + item.shortDescription
-      + "\", \"title\": \"" + item.gamertag + " " + item.shortDescription + "\", \"title_link\": \"http://xboxclips.com/" + item.gamertag + "/" + item.clipId + "\", \"thumb_url\": \""
-      + item.clipThumbnail + "&format=png&w=128&h=128\", \"fields\": [{\"title\": \"Title\", \"value\": \"" + item.itemText + "\"}]}]}";
+      message = {
+        attachments: [
+          {
+            fallback: `${item.gamertag} ${item.shortDescription}`,
+            title: `${item.gamertag} ${item.shortDescription}`,
+            title_link: `http://xboxclips.com/${item.gamertag}/${item.clipId}`,
+            thumb_url: `${item.clipThumbnail}&format=png&w=128&h=128`,
+            fields: [
+              {
+                title: `Title`,
+                value: item.itemText
+              }
+            ]
+          }
+        ]
+      };
       break;
   }
 
-  sendSlackMessage(slackChannelEndPoint, message);
+  if (channelOverride) {
+    message.channel = channelOverride;
+  }
+
+  sendSlackMessage(slackChannelEndPoint, JSON.stringify(message));
 }
 
 function sendSlackMessage(endPoint, message) {
