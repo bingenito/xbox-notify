@@ -9,7 +9,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "luxon": "^1.5.0",
+    "luxon": "^1.28.1",
     "request": "^2.88.0"
   }
 }
